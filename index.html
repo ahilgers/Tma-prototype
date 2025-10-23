@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TMA Prototype</title>
+<style>
+/* Basic dark + mint theme */
+:root {
+--bg: #0f1113;
+--card: #141617;
+--muted: #9aa3a6;
+--mint: #6de0b5; /* mint */
+--accent: #6de0b5;
+--success: #4caf50;
+--danger: #ff6b6b;
+--white: #ffffff;
+}
+* { box-sizing: border-box; font-family: Inter, system-ui, Arial; }
+body { margin:0; background:var(--bg); color:var(--white); }
+.center { display:flex; align-items:center; justify-content:center; }
+.container { max-width:980px; margin:20px auto; padding:16px; }
+/* Splash */
+.splash { height: 80vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; }
+.logo { font-weight:700; font-size:36px; color:var(--mint); letter-spacing:1px; }
+.tag { color:var(--muted); font-size:14px; }
+/* Card */
+.card { background:var(--card); padding:18px; border-radius:12px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+input, textarea { width:100%; padding:10px; margin:6px 0 12px 0; background:#0b0c0d; color:var(--white); border:1px solid #222; border-radius:8px; }
+button { background:var(--mint); color:#082018; border:0; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
+button.ghost { background:transparent; border:1px solid #2a2a2a; color:var(--white); }
+.muted { color:var(--muted); font-size:13px; }
+/* layout */
+.grid { display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+@media (max-width:720px) { .grid { grid-template-columns: 1fr; } .splash { height:60vh; } .logo { font-size:32px; } }
+/* small */
+.small { font-size:13px; color:var(--muted); }
+/* verification animation */
+.verify-wrap { display:flex; align-items:center; justify-content:center; height:140px; }
+.spinner { width:72px; height:72px; border-radius:50%; border:6px solid rgba(255,255,255,0.06); border-top-color:var(--mint); animation:spin 1s linear infinite; }
+@keyframes spin{ to { transform: rotate(360deg);} }
+.check { width:84px; height:84px; border-radius:50%; background: linear-gradient(180deg, rgba(109,224,181,0.18), rgba(109,224,181,0.08)); display:flex; align-items:center; justify-content:center; color:var(--mint); font-size:32px; }
+.hidden { display:none; }
+/* small footer */
+footer { text-align:center; color:var(--muted); margin-top:18px; font-size:13px; }
+.support { position:fixed; right:18px; bottom:18px; background:#222; padding:8px 12px; border-radius:16px; color:var(--muted); cursor:pointer; }
+.chat { position:fixed; right:18px; bottom:72px; width:320px; max-width:90%; }
+.chat .card { background:#111; }
+.tx-list { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.tx { background:#0d0f10; padding:10px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.pill { background:#08100b; color:var(--mint); padding:6px 10px; border-radius:999px; font-weight:600; }
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash" class="splash">
+<div class="logo">TMA</div>
+<div class="tag">Secure Every Transaction</div>
+<div style="margin-top:18px">
+<button onclick="showAuth()">Get Started</button>
+</div>
+<div style="margin-top:20px" class="muted">Transaction Mediation App — demo prototype</div>
+</div>
+
+<!-- Auth (Sign up / Login) -->
+<div id="auth" class="container hidden">
+<div class="card" style="max-width:720px;margin:0 auto;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+<div>
+<div class="logo">TMA</div>
+<div class="small">Secure Every Transaction</div>
+</div>
+<div>
+<button class="ghost" onclick="showSplash()">Back</button>
+</div>
+</div>
+
+<div id="auth-forms" class="grid">
+<div>
+<h3>Sign Up</h3>
+<input id="su-name" placeholder="Full name" />
+<input id="su-email" placeholder="Email" />
+<input id="su-phone" placeholder="Phone" />
+<input id="su-password" placeholder="Password" type="password" />
+<input id="su-bvn" placeholder="BVN (10-11 digits)" />
+<button onclick="signup()">Verify BVN & Create Account</button>
+<div id="su-msg" class="small muted"></div>
+</div>
+<div>
+<h3>Login</h3>
+<input id="li-email" placeholder="Email" />
+<button onclick="login()">Login</button>
+<div style="height:10px"></div>
+<div class="muted">Forgot Password? (demo)</div>
+<hr/>
+<h4 class="muted">Demo notes</h4>
+<div class="small muted">Use any email for signup; BVN must be 10-11 digits. Wallet prefilled for demo.</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Verification / Animation -->
+<div id="verify" class="container hidden">
+<div class="card" style="max-width:420px;margin:30px auto;text-align:center;">
+<h3>Verifying BVN</h3>
+<div class="verify-wrap" id="verify-wrap">
+<div id="spinner" class="spinner"></div>
+<div id="check" class="check hidden">✓</div>
+</div>
+<div id="verify-msg" class="small muted">Please wait...</div>
+</div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="container hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+<div>
+<div class="logo">TMA</div>
+<div class="small muted">Secure Every Transaction</div>
+</div>
+<div style="text-align:right">
+<div id="welcome" class="muted">Welcome, User</div>
+<div id="balance" style="font-weight:700;font-size:18px">₦0.00</div>
+</div>
+</div>
+
+<div style="margin-top:18px" class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<div>
+<div class="muted">Transaction Success Rate</div>
+<div style="font-weight:700">99.4%</div>
+</div>
+<div>
+<button onclick="showMakePayment()">Make Payment</button>
+<button class="ghost" onclick="loadTx()">My Transactions</button>
+</div>
+</div>
+
+<div id="tx-area" style="margin-top:12px">
+<!-- transaction list -->
+</div>
+</div>
+
+<div style="margin-top:12px; display:flex; gap:10px;">
+<div class="card" style="flex:1">
+<h4>Quick Actions</h4>
+<div style="display:flex;gap:8px;">
+<button onclick="fakeDeposit()">Deposit (demo)</button>
+<button class="ghost" onclick="fakeWithdraw()">Withdraw (demo)</button>
+</div>
+</div>
+<div class="card" style="width:320px">
+<h4>Support</h4>
+<div class="small muted">Need help? Click support.</div>
+<div style="margin-top:10px">
+<button onclick="openSupport()">Contact Support</button>
+</div>
+</div>
+</div>
+
+<footer>Powered by TMA | Confidential Document</footer>
+</div>
+
+<!-- Make Payment Modal (simple on-screen card) -->
+<div id="pay-modal" class="container hidden">
+<div class="card" style="max-width:520px;margin:20px auto">
+<h3>Make Payment (Escrow)</h3>
+<input id="pay-seller" placeholder="Seller name" />
+<input id="pay-amount" placeholder="Amount (₦)" />
+<input id="pay-desc" placeholder="Description (optional)" />
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+<button class="ghost" onclick="closePay()">Cancel</button>
+<button onclick="createPayment()">Proceed</button>
+</div>
+<div id="pay-msg" class="small muted"></div>
+</div>
+</div>
+
+<!-- Payment Holding / Status -->
+<div id="holding" class="container hidden">
+<div class="card" style="max-width:520px;margin:20px auto">
+<h3>Payment In Escrow</h3>
+<div id="holding-info" class="small muted">Waiting for confirmation...</div>
+<div style="margin-top:12px">
+<button onclick="confirmDelivery()">I received the item (Confirm)</button>
+<button class="ghost" onclick="requestRefund()">Request Refund</button>
+</div>
+</div>
+</div>
+
+<!-- Refund request -->
+<div id="refund" class="container hidden">
+<div class="card" style="max-width:520px;margin:20px auto">
+<h3>Request Refund</h3>
+<textarea id="refund-reason" placeholder="Explain why you want a refund"></textarea>
+<div style="display:flex;justify-content:flex-end;gap:8px">
+<button class="ghost" onclick="closeRefund()">Cancel</button>
+<button onclick="submitRefund()">Submit Refund Request</button>
+</div>
+</div>
+</div>
+
+<!-- Support chat widget -->
+<div id="chat" class="chat hidden">
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><strong>Support</strong></div>
+<div style="color:var(--muted); cursor:pointer" onclick="closeSupport()">✕</div>
+</div>
+<div id="chat-body" style="height:180px; overflow:auto; margin-top:8px; color:var(--muted); font-size:14px;">
+<div class="small muted">Hi, how can we help you?</div>
+</div>
+<div style="margin-top:8px; display:flex; gap:8px;">
+<input id="chat-input" placeholder="Type message..." />
+<button onclick="sendSupport()">Send</button>
+</div>
+</div>
+</div>
+
+<div class="support" onclick="openSupport()">Support</div>
+
+<script>
+const apiBase = '/api';
+let currentUser = null;
+let currentTx = null;
+
+function $(id){ return document.getElementById(id); }
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+function showAuth(){ hide('splash'); show('auth'); }
+function showSplash(){ hide('auth'); show('splash'); }
+
+// signup flow
+async function signup(){
+const name = $('su-name').value.trim();
+const email = $('su-email').value.trim();
+const phone = $('su-phone').value.trim();
+const password = $('su-password').value;
+const bvn = $('su-bvn').value.trim();
+$('su-msg').textContent = '';
+try {
+const r = await fetch(apiBase + '/signup', {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body: JSON.stringify({name,email,phone,password,bvn})
+});
+const j = await r.json();
+if (!j.ok) { $('su-msg').textContent = j.error || 'Signup failed'; return; }
+currentUser = { name, email, wallet: j.user.wallet };
+// go to verification animation (we are mocking verification already done server-side)
+hide('auth'); show('verify');
+setTimeout(()=> {
+$('#spinner').classList.add('hidden');
+$('#check').classList.remove('hidden');
+$('verify-msg').textContent = 'Verified';
+setTimeout(()=> {
+hide('verify');
+openDashboard();
+}, 900);
+}, 1400);
+} catch (err) {
+$('su-msg').textContent = 'Network error';
+}
+}
+
+// login
+async function login(){
+const email = $('li-email').value.trim();
+if (!email) return alert('Enter email');
+const r = await fetch(apiBase + '/login', {
+method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email})
+});
+const j = await r.json();
+if (!j.ok) return alert(j.error || 'Login failed');
+currentUser = { name: j.user.name, email: j.user.email, wallet: j.user.wallet };
+openDashboard();
+}
+
+function openDashboard(){
+hide('splash'); hide('auth'); hide('verify'); hide('pay-modal'); hide('holding'); hide('refund');
+show('dashboard');
+$('welcome').textContent = 'Welcome, ' + (currentUser?.name || 'User');
+$('balance').textContent = '₦' + ((currentUser?.wallet||0).toLocaleString());
+loadTx();
+}
+
+// Make payment modal
+function showMakePayment(){
+show('pay-modal');
+}
+function closePay(){ hide('pay-modal'); }
+async function createPayment(){
+const seller = $('pay-seller').value || 'Seller';
+const amount = Number($('pay-amount').value || 0);
+const desc = $('pay-desc').value || '';
+if (!currentUser) return alert('Login first');
+if (!amount || amount <= 0) return alert('Enter amount');
+// create transaction
+const r = await fetch(apiBase + '/transactions', {
+method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+buyerEmail: currentUser.email, sellerName: seller, amount, description: desc
+})
+});
+const j = await r.json();
+if (!j.ok) return alert(j.error||'Error creating tx');
+currentTx = j.tx;
+closePay();
+showHolding(currentTx);
+}
+
+function showHolding(tx){
+hide('pay-modal'); hide('auth'); hide('dashboard'); show('holding');
+$('holding-info').textContent = `Escrow ID: ${tx.id} — Amount: ₦${tx.amount.toLocaleString()}`;
+}
+
+async function confirmDelivery(){
+if (!currentTx) return alert('No transaction');
+const r = await fetch(apiBase + '/transactions/' + currentTx.id + '/confirm', { method:'POST' });
+const j = await r.json();
+if (!j.ok) return alert(j.error || 'error');
+alert('Payment released to seller');
+currentTx = null;
+openDashboard();
+}
+
+function requestRefund(){ hide('holding'); show('refund'); }
+function closeRefund(){ hide('refund'); show('holding'); }
+
+async function submitRefund(){
+const reason = $('refund-reason').value || 'No reason';
+if (!currentTx) return alert('No tx');
+const r = await fetch(apiBase + '/transactions/' + currentTx.id + '/refund', {
+method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason})
+});
+const j = await r.json();
+if (!j.ok) return alert(j.error||'error');
+alert('Refund requested. Admin will review.');
+currentTx = null;
+openDashboard();
+}
+
+// load transactions
+async function loadTx(){
+if (!currentUser) return;
+const r = await fetch(apiBase + '/transactions/' + currentUser.email);
+const j = await r.json();
+if (!j.ok) return;
+const area = $('tx-area');
+area.innerHTML = '';
+const list = j.transactions;
+if (!list.length) { area.innerHTML = '<div class="muted small">No transactions yet.</div>'; return; }
+list.forEach(t => {
+const el = document.createElement('div'); el.className = 'tx';
+el.innerHTML = `<div>
+<div style="font-weight:700">${t.sellerName}</div>
+<div class="small muted">${t.description}</div>
+</div>
+<div style="text-align:right">
+<div>₦${Number(t.amount).toLocaleString()}</div>
+<div style="margin-top:6px">${t.status}</div>
+</div>`;
+area.appendChild(el);
+});
+}
+
+// fake deposit/withdraw to demo wallet change
+function fakeDeposit(){ if (!currentUser) return alert('Login'); currentUser.wallet += 5000; $('balance').textContent = '₦' + currentUser.wallet.toLocaleString(); }
+function fakeWithdraw(){ if (!currentUser) return alert('Login'); currentUser.wallet = Math.max(0, currentUser.wallet - 2000); $('balance').textContent = '₦' + currentUser.wallet.toLocaleString(); }
+
+// Support
+function openSupport(){ show('chat'); }
+function closeSupport(){ hide('chat'); }
+async function sendSupport(){
+const msg = $('chat-input').value.trim(); if (!msg) return;
+const email = currentUser?.email || 'guest@demo';
+await fetch(apiBase + '/support', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, message: msg})});
+const body = $('chat-body');
+const p = document.createElement('div'); p.textContent = 'You: ' + msg; p.style.color='var(--white)'; p.style.marginTop='6px';
+body.appendChild(p);
+$('chat-input').value = '';
+body.scrollTop = body.scrollHeight;
+}
+
+// helper to select elements faster
+function $(id){ return document.getElementById(id); }
+
+// on load
+document.addEventListener('DOMContentLoaded', () => {
+// keep splash visible, others hidden initially
+});
+</script>
+</body>
+</html>
