@@ -1,0 +1,73 @@
+// server.js
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Mock in-memory database
+let users = [];
+let transactions = [];
+
+// BVN verification (mock)
+app.post('/verify-bvn', (req, res) => {
+const { bvn } = req.body;
+if (!bvn) return res.status(400).json({ message: 'BVN is required' });
+
+// Simulate verification
+if (bvn.length === 11) {
+return res.json({ success: true, message: 'BVN verified successfully ✅' });
+} else {
+return res.json({ success: false, message: 'Invalid BVN ❌' });
+}
+});
+
+// Register user
+app.post('/register', (req, res) => {
+const { name, email, password, bvn } = req.body;
+if (!name || !email || !password || !bvn) {
+return res.status(400).json({ message: 'All fields are required' });
+}
+users.push({ name, email, password, bvn });
+res.json({ message: 'User registered successfully', users });
+});
+
+// Login user
+app.post('/login', (req, res) => {
+const { email, password } = req.body;
+const user = users.find(u => u.email === email && u.password === password);
+if (user) {
+res.json({ success: true, message: 'Login successful', user });
+} else {
+res.json({ success: false, message: 'Invalid credentials' });
+}
+});
+
+// Create transaction
+app.post('/transaction', (req, res) => {
+const { sender, receiver, amount } = req.body;
+if (!sender || !receiver || !amount) {
+return res.status(400).json({ message: 'All fields required' });
+}
+const transaction = {
+id: transactions.length + 1,
+sender,
+receiver,
+amount,
+status: 'pending',
+};
+transactions.push(transaction);
+res.json({ message: 'Transaction created', transaction });
+});
+
+// Fetch all transactions
+app.get('/transactions', (req, res) => {
+res.json(transactions);
+});
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
